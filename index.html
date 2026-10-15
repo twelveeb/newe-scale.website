@@ -2002,17 +2002,38 @@
   // ================================================================
   // CONTACT FORM
   // ================================================================
-  document.getElementById('contactForm').addEventListener('submit', (e) => {
+  const CONTACT_EMAIL = 'escale.pt@gmail.com';
+  document.getElementById('contactForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
+    const form = e.target;
+    const btn = form.querySelector('button[type="submit"]');
     const original = btn.innerHTML;
-    btn.innerHTML = getI18nValue(CURRENT_LANG, 'page.contact.submitted') || '✓ Pedido enviado — responderemos em 24h';
-    btn.style.background = '#10B981';
+    btn.disabled = true;
+    const fd = new FormData(form);
+    fd.append('_subject', 'Novo pedido de auditoria — E-Scale');
+    fd.append('_template', 'table');
+    fd.append('_captcha', 'false');
+    let ok = false;
+    try {
+      const r = await fetch('https://formsubmit.co/ajax/' + CONTACT_EMAIL, {
+        method: 'POST', headers: {'Accept':'application/json'}, body: fd
+      });
+      const j = await r.json();
+      ok = r.ok && (j.success === true || j.success === 'true');
+    } catch(err){ ok = false; }
+    if(ok){
+      btn.innerHTML = getI18nValue(CURRENT_LANG, 'page.contact.submitted') || '✓ Pedido enviado — responderemos em 24h';
+      btn.style.background = '#10B981';
+      form.reset();
+    } else {
+      btn.innerHTML = '✕ ' + CONTACT_EMAIL;
+      btn.style.background = '#DC2626';
+    }
     setTimeout(() => {
       btn.innerHTML = original;
       btn.style.background = '';
-      e.target.reset();
-    }, 3500);
+      btn.disabled = false;
+    }, 4500);
   });
 
   // Check checkout return params on load
